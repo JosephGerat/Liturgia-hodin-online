@@ -3,6 +3,7 @@ package sk.breviar.android;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.DialogInterface;
@@ -34,6 +35,9 @@ import sk.breviar.android.LangSelect;
 import sk.breviar.android.Server;
 import sk.breviar.android.Util;
 
+
+
+
 public class Breviar extends Activity {
     static String scriptname = "cgi-bin/l.cgi";
     static final int DIALOG_NEWS = 2;
@@ -49,6 +53,25 @@ public class Breviar extends Activity {
 
     int appEventId = -1;
 
+    final Context myApp = this;  
+    
+    /* An instance of this class will be registered as a JavaScript interface */  
+    class MyJavaScriptInterface   
+    {  
+        @SuppressWarnings("unused")  
+        public void showHTML(String html)  
+        {  
+            new AlertDialog.Builder(myApp)  
+                .setTitle("HTML")  
+                .setMessage(html)  
+                .setPositiveButton(android.R.string.ok, null)  
+            .setCancelable(false)  
+            .create()  
+            .show();  
+        }  
+    }
+    
+    
     void goHome() {
       Log.v("breviar", "goHome");
       wv.loadUrl("http://127.0.0.1:" + S.port + "/" + scriptname + 
@@ -132,6 +155,9 @@ public class Breviar extends Activity {
       wv.getSettings().setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NARROW_COLUMNS);
       wv.getSettings().setUseWideViewPort(false);
       wv.setInitialScale(scale);
+      wv.getSettings().setJavaScriptEnabled(true); 
+      wv.addJavascriptInterface(new MyJavaScriptInterface(), "HTMLOUT");
+      
       initialized = false;
       Log.v("breviar", "setting scale = " + scale);
 
@@ -186,6 +212,9 @@ public class Breviar extends Activity {
           if (parent.clearHistory) view.clearHistory();
           parent.clearHistory = false;
           super.onPageFinished(view, url);
+          
+          /* This call inject JavaScript into the page which just finished loading. */  
+          wv.loadUrl("javascript:window.HTMLOUT.showHTML('<head>'+document.getElementsByTagName('html')[0].innerHTML+'</head>');");
         }
       } );
 
